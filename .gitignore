@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Environment / Secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# ML Models / Generated files
+ml-service/saved_models/*.joblib
+
+# PostgreSQL / Local data
+postgres_data/
+
+# Build output
+build/
+dist/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: gigshield-db
+    environment:
+      POSTGRES_DB: gigshield
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gigshield-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/gigshield
+      - ML_SERVICE_URL=http://ml-service:8000
+      - GUIDEWIRE_BASE_URL=http://backend:3000/api/guidewire-sim
+      - NODE_ENV=development
+    env_file:
+      - ./backend/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend/logs:/app/logs
+
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: gigshield-ml
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./ml-service/saved_models:/app/saved_models
+      - ./ml-service/data:/app/data
+
+  dashboard:
+    build:
+      context: ./frontend-dashboard
+      dockerfile: Dockerfile
+    container_name: gigshield-dashboard
+    ports:
+      - "3001:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:3000/api
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
